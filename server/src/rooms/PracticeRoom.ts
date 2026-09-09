@@ -1,7 +1,19 @@
 import { Client } from "colyseus";
-import { ATTACK1_RANGE, ATTACK2_RANGE, ATTACK3_RANGE, GROUND_Y, JoinOptions, MAX_HP, SPAWN_X } from "@hnd/shared";
+import {
+  ATTACK1_RANGE,
+  ATTACK2_RANGE,
+  ATTACK3_RANGE,
+  CharacterClass,
+  GROUND_Y,
+  JoinOptions,
+  MAX_HP,
+  SPAWN_X,
+} from "@hnd/shared";
 import { PlayerSchema } from "../schema/PlayerSchema";
-import { BattleRoom } from "./BattleRoom";
+import { BattleRoom, CLASS_SKINS } from "./BattleRoom";
+
+const ALL_CLASSES: CharacterClass[] = ["knight", "ninja", "wizard", "samurai"];
+const BOT_START_IN_BOW_CHANCE = 0.3; // only relevant when the bot randomly rolls "samurai"
 
 const BOT_SESSION_ID = "bot";
 const BOT_NAME = "AI Bot";
@@ -37,6 +49,13 @@ export class PracticeRoom extends BattleRoom {
     const bot = new PlayerSchema();
     bot.name = BOT_NAME;
     bot.side = side;
+
+    const characterClass = ALL_CLASSES[Math.floor(Math.random() * ALL_CLASSES.length)];
+    const skinOptions = CLASS_SKINS[characterClass];
+    bot.characterClass = characterClass;
+    bot.skin = skinOptions[Math.floor(Math.random() * skinOptions.length)];
+    bot.weaponType = characterClass === "samurai" && Math.random() < BOT_START_IN_BOW_CHANCE ? "bow" : "sword";
+
     bot.x = SPAWN_X[side];
     bot.y = GROUND_Y;
     bot.hp = MAX_HP;

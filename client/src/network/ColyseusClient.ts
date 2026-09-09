@@ -1,8 +1,9 @@
 import { Client, Room } from "colyseus.js";
-import { JoinOptions, PRACTICE_ROOM_NAME, ROOM_NAME } from "@hnd/shared";
+import { CreateRoomResponse, JoinOptions, PRACTICE_ROOM_NAME, ResolveRoomCodeResponse, ROOM_NAME } from "@hnd/shared";
 import { BattleStateView } from "./types";
 
 const ENDPOINT = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
+const HTTP_BASE = ENDPOINT.replace(/^ws/, "http");
 
 let client: Client | null = null;
 
@@ -19,4 +20,22 @@ export async function joinBattle(options: JoinOptions): Promise<Room<BattleState
 // a bot fills the other side server-side, see server/src/rooms/PracticeRoom.ts.
 export async function joinPractice(options: JoinOptions): Promise<Room<BattleStateView>> {
   return getClient().create<BattleStateView>(PRACTICE_ROOM_NAME, options);
+}
+
+// Private-room-by-code flow (server/src/index.ts + server/src/rooms/PrivateRoom.ts).
+export async function createPrivateRoom(): Promise<CreateRoomResponse> {
+  const res = await fetch(`${HTTP_BASE}/api/rooms`, { method: "POST" });
+  if (!res.ok) throw new Error("Could not create a room right now.");
+  return res.json();
+}
+
+export async function resolveRoomCode(code: string): Promise<string> {
+  const res = await fetch(`${HTTP_BASE}/api/rooms/${encodeURIComponent(code)}`);
+  if (!res.ok) throw new Error("Invalid or expired room code.");
+  const data: ResolveRoomCodeResponse = await res.json();
+  return data.roomId;
+}
+
+export async function joinRoomById(roomId: string, options: JoinOptions): Promise<Room<BattleStateView>> {
+  return getClient().joinById<BattleStateView>(roomId, options);
 }

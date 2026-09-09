@@ -1,7 +1,7 @@
 import { Client } from "colyseus";
 import { JoinOptions, MessageType, SelectCharacterMessage } from "@hnd/shared";
 import { BattleRoom } from "./BattleRoom";
-import { releaseByRoomId } from "./RoomCodeRegistry";
+import { releaseByRoomId } from "./roomCodeRegistry";
 
 // Created via server/src/index.ts's POST /api/rooms (matchMaker.createRoom),
 // never through normal joinOrCreate matchmaking -- so it's inherently

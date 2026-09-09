@@ -2,8 +2,15 @@
   box-sizing: border-box;
 }
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
+  padding: 0;
+}
+
+body {
   font-family: system-ui, sans-serif;
   background: #12141c;
   color: #f0f0f5;
@@ -92,12 +99,14 @@ button.secondary {
 
 .battle-screen {
   position: relative;
-  width: 1280px;
-  max-width: 100vw;
-  margin: 0 auto;
+  width: 100vw;
+  height: 100vh;
+  background: #05040a;
 }
 
 .phaser-container {
+  width: 100%;
+  height: 100%;
   line-height: 0;
 }
 
@@ -106,134 +115,6 @@ button.secondary {
   image-rendering: -moz-crisp-edges;
 }
 
-.hud {
-  position: absolute;
-  top: 12px;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0 20px;
-  z-index: 10;
-  pointer-events: none;
-}
-
-.timer {
-  font-size: 28px;
-  font-weight: bold;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 4px 16px;
-  border-radius: 8px;
-}
-
-.hp-bar {
-  width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hp-bar--right {
-  align-items: flex-end;
-}
-
-.hp-bar__label {
-  font-size: 14px;
-  text-shadow: 0 1px 2px black;
-}
-
-.hp-bar__track {
-  width: 100%;
-  height: 18px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid #000;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.hp-bar__fill {
-  height: 100%;
-  background: linear-gradient(90deg, #4caf50, #8bc34a);
-  transition: width 0.15s ease-out;
-}
-
-.hp-bar--right .hp-bar__fill {
-  margin-left: auto;
-  background: linear-gradient(90deg, #8bc34a, #4caf50);
-}
-
-.cooldowns {
-  position: absolute;
-  bottom: 16px;
-  display: flex;
-  gap: 10px;
-  z-index: 10;
-  pointer-events: none;
-}
-
-.cooldowns--left {
-  left: 20px;
-}
-
-.cooldowns--right {
-  right: 20px;
-}
-
-.cooldown {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  border: 2px solid #000;
-  background: #2a2f42;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.cooldown__label {
-  position: relative;
-  z-index: 1;
-  text-shadow: 0 1px 2px black;
-}
-
-.cooldown__overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.65);
-  transition: height 0.1s linear;
-}
-
-.cooldown__seconds {
-  position: absolute;
-  bottom: 2px;
-  right: 3px;
-  z-index: 1;
-  font-size: 10px;
-}
-
-.cooldown--ready {
-  border-color: #6d8dff;
-}
-
-.result-screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-.result-screen--win h1 {
-  color: #6fe08a;
-}
-
-.result-screen--lose h1 {
-  color: #ff6b6b;
-}
+/* Battle HUD styling now lives in theme/retro.css (.hud, .hp-bar*, .timer,
+   .cooldown*, .shield-bar*, .battle-hud-bottom*, .result-*) since the battle
+   and result screens are themed retro-pixel now, same as the rest of the app. */

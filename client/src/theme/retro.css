@@ -1,0 +1,728 @@
+/* Retro pixel game UI -- design tokens + utility classes for the private-room
+   flow screens (Main Menu, Create/Join Room, Room Lobby, Disconnect overlay),
+   the battle HUD/death sequence, and the Result screen. Lobby is the only
+   screen still on its plain-dark styling from App.css. */
+
+:root {
+  --retro-bg: #0d0a14;
+  --retro-panel: #1a1225;
+  --retro-panel-light: #241a33;
+  --retro-accent: #a855f7;
+  --retro-accent-dark: #4c1d78;
+  --retro-white: #f5f0ff;
+  --retro-muted: #b8a8d0;
+  --retro-danger: #ff4d4d;
+  --retro-success: #4dff88;
+}
+
+.retro-screen {
+  font-family: "Chakra Petch", sans-serif;
+  background: var(--retro-bg);
+  color: var(--retro-white);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.retro-heading {
+  font-family: "Press Start 2P", monospace; /* English/numeric headings only -- no Thai glyphs */
+  letter-spacing: 1px;
+}
+
+.retro-halftone {
+  background-image: radial-gradient(circle, var(--retro-accent-dark) 1.5px, transparent 1.6px);
+  background-size: 10px 10px;
+}
+
+.retro-panel {
+  border: 4px solid var(--retro-white);
+  box-shadow: 8px 8px 0 #000;
+  background: var(--retro-panel);
+}
+
+.retro-btn {
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  box-shadow: 4px 4px 0 #000;
+  border: none;
+  background: var(--retro-accent);
+  color: var(--retro-white);
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 14px 20px;
+  transition: transform 0.08s ease;
+}
+
+.retro-btn:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.retro-btn:active:not(:disabled) {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.retro-btn:disabled {
+  background: #3a3a44;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.retro-btn--secondary {
+  background: var(--retro-panel-light);
+  border: 2px solid var(--retro-muted);
+}
+
+.retro-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.retro-field span {
+  font-size: 14px;
+  color: var(--retro-muted);
+}
+
+.retro-input {
+  font-family: "Chakra Petch", sans-serif;
+  background: #000;
+  border: 3px solid var(--retro-white);
+  color: var(--retro-white);
+  padding: 12px 14px;
+  font-size: 16px;
+}
+
+.retro-input:focus {
+  outline: none;
+  border-color: var(--retro-accent);
+}
+
+.retro-code-box {
+  font-family: "Press Start 2P", monospace;
+  font-size: 28px;
+  letter-spacing: 8px;
+  background: #000;
+  border: 3px solid var(--retro-white);
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.retro-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.retro-error {
+  color: var(--retro-danger);
+  font-size: 13px;
+}
+
+.retro-player-card {
+  width: 220px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.retro-player-card__avatar {
+  width: 96px;
+  height: 96px;
+  background: var(--retro-panel-light);
+  border: 3px solid var(--retro-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Press Start 2P", monospace;
+  font-size: 24px;
+}
+
+.retro-ready-badge {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.retro-ready-badge--ready {
+  color: var(--retro-success);
+}
+
+.retro-ready-badge--waiting {
+  color: var(--retro-muted);
+}
+
+.retro-vs-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--retro-white);
+  background: var(--retro-accent-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.retro-dots::after {
+  content: "";
+  animation: retro-dots 1.2s steps(4, end) infinite;
+}
+
+@keyframes retro-dots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+}
+
+.retro-class-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.retro-class-picker button {
+  width: 48px;
+  height: 48px;
+  background: var(--retro-panel-light);
+  border: 2px solid var(--retro-muted);
+  color: var(--retro-white);
+  font-family: "Chakra Petch", sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.retro-class-picker button.selected {
+  border-color: var(--retro-accent);
+  background: var(--retro-accent-dark);
+}
+
+/* ===== Battle HUD (BattleScreen.tsx, CooldownIndicator.tsx) ===== */
+
+.hud {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hud__side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.timer {
+  font-family: "Press Start 2P", monospace;
+  font-size: 22px;
+  color: var(--retro-white);
+  background: #000;
+  border: 3px solid var(--retro-white);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  padding: 8px 20px;
+  min-width: 70px;
+  text-align: center;
+}
+
+.timer--low {
+  color: var(--retro-danger);
+  border-color: var(--retro-danger);
+  animation: retro-blink 0.6s steps(1, end) infinite;
+}
+
+@keyframes retro-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.hp-bar {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hp-bar--right {
+  align-items: flex-end;
+}
+
+.hp-bar__header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hp-bar--right .hp-bar__header {
+  flex-direction: row-reverse;
+}
+
+.hp-bar__label {
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.hp-bar__value {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  color: var(--retro-muted);
+}
+
+.hp-bar__track {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: #000;
+  border: 3px solid #000;
+  outline: 2px solid var(--retro-white);
+  overflow: hidden;
+}
+
+.hp-bar__fill {
+  height: 100%;
+  transition: width 0.15s ease-out;
+}
+
+.hp-bar--right .hp-bar__fill {
+  margin-left: auto;
+}
+
+.hp-bar__fill--high {
+  background: var(--retro-success);
+}
+
+.hp-bar__fill--mid {
+  background: #ffd24d;
+}
+
+.hp-bar__fill--low {
+  background: var(--retro-danger);
+}
+
+.hp-bar__notches {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(10% - 2px),
+    #000 calc(10% - 2px),
+    #000 10%
+  );
+  pointer-events: none;
+}
+
+.shield-bar {
+  width: 320px;
+  position: relative;
+}
+
+.shield-bar--right {
+  align-self: flex-end;
+}
+
+.shield-bar__track {
+  width: 100%;
+  height: 8px;
+  background: #000;
+  border: 2px solid #000;
+  outline: 1px solid var(--retro-white);
+}
+
+.shield-bar__fill {
+  height: 100%;
+  background: #4fc3f7;
+  transition: width 0.15s ease-out;
+}
+
+.shield-bar--right .shield-bar__fill {
+  margin-left: auto;
+}
+
+.shield-bar--broken .shield-bar__track {
+  outline-color: var(--retro-muted);
+}
+
+.shield-bar--broken .shield-bar__fill {
+  background: #5a5a5a;
+}
+
+.shield-bar__label {
+  position: absolute;
+  top: -14px;
+  right: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  color: var(--retro-danger);
+}
+
+.shield-bar--right .shield-bar__label {
+  right: auto;
+  left: 0;
+}
+
+.battle-hud-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80px;
+  background: rgba(10, 6, 18, 0.85);
+  border-top: 3px solid var(--retro-white);
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.battle-hud-bottom__skills {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px;
+}
+
+.battle-hud-bottom__skills--left {
+  margin-right: auto;
+}
+
+.battle-hud-bottom__skills--right {
+  margin-left: auto;
+}
+
+.cooldown {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  border: 3px solid var(--retro-white);
+  background: var(--retro-panel-light);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Press Start 2P", monospace;
+  font-size: 16px;
+  pointer-events: auto;
+}
+
+.cooldown__label {
+  position: relative;
+  z-index: 1;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.cooldown__overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  transition: height 0.1s linear;
+}
+
+.cooldown__seconds {
+  position: absolute;
+  bottom: 3px;
+  right: 4px;
+  z-index: 1;
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+}
+
+.cooldown--ready {
+  border-color: var(--retro-accent);
+}
+
+.battle-hud-bottom--disabled .cooldown {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* ===== Death sequence (DeathOverlay.tsx, BattleScene.startDeathSequence) ===== */
+
+.battle-canvas-wrap {
+  width: 100%;
+  height: 100%;
+  transition: filter 800ms ease;
+}
+
+.battle-canvas-wrap--dead {
+  filter: grayscale(0.7);
+}
+
+.death-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms ease;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.75) 100%);
+  z-index: 15;
+}
+
+.death-overlay--active {
+  opacity: 1;
+}
+
+.death-overlay__ko {
+  font-size: 64px;
+  color: var(--retro-danger);
+  text-shadow: 4px 4px 0 #000;
+  opacity: 0;
+  animation: death-ko-fade-in 3s ease forwards;
+}
+
+@keyframes death-ko-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Label-wrapped radio inputs (kept as real <input type="radio"> for a11y,
+   rendered as pixel-bordered toggle pills). */
+.retro-toggle-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.retro-toggle-group legend {
+  width: 100%;
+  font-size: 14px;
+  color: var(--retro-muted);
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.retro-toggle-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px solid var(--retro-muted);
+  background: var(--retro-panel-light);
+  color: var(--retro-white);
+  cursor: pointer;
+  font-family: "Chakra Petch", sans-serif;
+  font-weight: 600;
+}
+
+.retro-toggle-group label.selected {
+  border-color: var(--retro-accent);
+  background: var(--retro-accent-dark);
+}
+
+.retro-toggle-group input[type="radio"] {
+  accent-color: var(--retro-accent);
+}
+
+/* ===== Result Screen (ResultScreen.tsx) ===== */
+
+.result-headline {
+  opacity: 0;
+  animation: result-headline-in 500ms ease forwards;
+}
+
+.result-headline--win {
+  color: #ffd700;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.result-headline--lose {
+  color: #94a3b8;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.result-headline--draw {
+  color: var(--retro-white);
+  text-shadow: 3px 3px 0 #000;
+}
+
+@keyframes result-headline-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.result-portrait-frame {
+  width: 160px;
+  height: 160px;
+  border: 3px solid var(--retro-white);
+  background: #000;
+  overflow: hidden;
+  animation: result-portrait-float 2s ease-in-out infinite;
+}
+
+.result-portrait-frame--win {
+  border-color: #ffd700;
+  box-shadow: 0 0 24px #ffd700, 0 0 6px #ffd700 inset;
+}
+
+.result-portrait-frame--lose {
+  border-color: #4b5563;
+  box-shadow: 0 0 20px #4b5563;
+}
+
+@keyframes result-portrait-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.result-portrait-frame__sprite {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+
+/* ===== Controls / How-to-Play screen (ControlsScreen.tsx, KeyBadge.tsx) ===== */
+
+.key-badge {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  border: 3px solid var(--retro-white);
+  background: var(--retro-panel-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.key-badge__label {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  text-shadow: 1px 1px 0 #000;
+  text-align: center;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.controls-content {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 24px 16px 48px;
+}
+
+.controls-section__title {
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.controls-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.controls-entry + .controls-entry {
+  margin-top: 14px;
+}
+
+.controls-entry__keys {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.controls-entry__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.controls-entry__label {
+  font-weight: 700;
+}
+
+.controls-entry__detail {
+  font-size: 13px;
+  color: var(--retro-muted);
+}
+
+/* ===== Mute button (BattleScreen.tsx HUD) ===== */
+
+.hud-mute-btn {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  z-index: 11;
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+  color: var(--retro-white);
+  background: rgba(10, 6, 18, 0.85);
+  border: 2px solid var(--retro-white);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  padding: 8px 10px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.hud-mute-btn[aria-pressed="true"] {
+  border-color: var(--retro-danger);
+  color: var(--retro-danger);
+}

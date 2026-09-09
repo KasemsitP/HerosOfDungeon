@@ -1,26 +1,34 @@
 import Phaser from "phaser";
 import { AnimState, PLAYER_HEIGHT } from "@hnd/shared";
 
-const SPRITE_FRAME_SIZE = 128;
 const DEFEND_FLASH_MS = 150;
+
+const ANIM_STATE_SUFFIX: Partial<Record<AnimState, string>> = {
+  attack1: "attack-1",
+  attack2: "attack-2",
+  attack3: "attack-3",
+  runAttack: "run-attack",
+  run: "run",
+  walk: "walk",
+  jump: "jump",
+  protect: "defend",
+  hurt: "hurt",
+  dead: "dead",
+  idle: "idle",
+};
 
 // Renders one player's server-authoritative state. This class never decides
 // position or HP itself — it only interpolates toward whatever the last
-// network update said, and plays a sprite animation (or a tween fallback,
-// for sides without pixel art yet) per animState.
+// network update said, and plays a sprite animation per animState.
 export class BattleCharacter extends Phaser.Physics.Arcade.Sprite {
   private targetX: number;
   private targetY: number;
   private currentAnim: AnimState = "idle";
   private readonly animPrefix: string;
-  private readonly hasAnimations: boolean;
 
-  constructor(scene: Phaser.Scene, animPrefix: string, x: number, y: number) {
-    const hasAnimations = scene.anims.exists(`${animPrefix}-idle`);
-    const textureKey = hasAnimations ? `${animPrefix}-idle` : animPrefix;
-    super(scene, x, y, textureKey);
+  constructor(scene: Phaser.Scene, animPrefix: string, x: number, y: number, frameSize = 128) {
+    super(scene, x, y, `${animPrefix}-idle`);
     this.animPrefix = animPrefix;
-    this.hasAnimations = hasAnimations;
     this.targetX = x;
     this.targetY = y;
 
@@ -32,12 +40,11 @@ export class BattleCharacter extends Phaser.Physics.Arcade.Sprite {
     body.setImmovable(true);
     this.setOrigin(0.5, 1);
 
-    if (hasAnimations) {
-      // Sprite sheet frames carry padding around the character; scale the
-      // whole frame down so the visible knight roughly matches PLAYER_HEIGHT.
-      this.setScale(PLAYER_HEIGHT / SPRITE_FRAME_SIZE);
-      this.play(`${animPrefix}-idle`);
-    }
+    // Sprite sheet frames carry padding around the character; scale the
+    // whole frame down so the visible character roughly matches PLAYER_HEIGHT.
+    // frameSize varies per class/skin (e.g. ninja's 96px tiles vs 128px elsewhere).
+    this.setScale(PLAYER_HEIGHT / frameSize);
+    this.play(`${animPrefix}-idle`);
   }
 
   setNetworkTarget(x: number, y: number, facingLeft: boolean) {
@@ -46,95 +53,35 @@ export class BattleCharacter extends Phaser.Physics.Arcade.Sprite {
     this.setFlipX(facingLeft);
   }
 
+  // Not every class/skin has every animation (ranged classes have no
+  // "defend", only knight has "run-attack") -- look the key up and fall back
+  // to idle rather than assuming it exists, since AnimState is shared across
+  // all classes but each SkinConfig only declares what it actually has.
   applyAnimState(state: AnimState) {
     if (state === this.currentAnim) return;
     this.currentAnim = state;
 
-    if (this.hasAnimations) {
-      this.playSpriteAnim(state);
-      return;
+    if (state === "protect") {
+      this.setTint(0x66aaff);
+      this.scene.time.delayedCall(DEFEND_FLASH_MS, () => this.setTint(0xffffff));
     }
 
-    this.applyPlaceholderEffect(state);
-  }
-
-  private playSpriteAnim(state: AnimState) {
-    switch (state) {
-      case "attack1":
-        this.play(`${this.animPrefix}-attack-1`);
-        break;
-      case "attack2":
-        this.play(`${this.animPrefix}-attack-2`);
-        break;
-      case "attack3":
-        this.play(`${this.animPrefix}-attack-3`);
-        break;
-      case "runAttack":
-        this.play(`${this.animPrefix}-run-attack`);
-        break;
-      case "run":
-        this.play(`${this.animPrefix}-run`);
-        break;
-      case "walk":
-        this.play(`${this.animPrefix}-walk`);
-        break;
-      case "jump":
-        this.play(`${this.animPrefix}-jump`);
-        break;
-      case "protect":
-        this.play(`${this.animPrefix}-defend`);
-        this.setTint(0x66aaff);
-        this.scene.time.delayedCall(DEFEND_FLASH_MS, () => this.setTint(0xffffff));
-        break;
-      case "hurt":
-        this.play(`${this.animPrefix}-hurt`);
-        break;
-      case "dead":
-        this.play(`${this.animPrefix}-dead`);
-        break;
-      case "idle":
-      default:
-        this.play(`${this.animPrefix}-idle`);
-        break;
-    }
-  }
-
-  // Placeholder-texture fallback for sides without pixel art loaded yet
-  // (a colored rectangle, tinted/tweened to hint at the current state).
-  private applyPlaceholderEffect(state: AnimState) {
-    this.setTint(0xffffff);
-    this.setScale(1);
-    this.setAlpha(1);
-
-    switch (state) {
-      case "attack1":
-      case "attack2":
-      case "attack3":
-      case "runAttack":
-        this.scene.tweens.add({ targets: this, scaleX: 1.25, duration: 100, yoyo: true });
-        break;
-      case "protect":
-        this.setTint(0x66aaff);
-        this.scene.time.delayedCall(DEFEND_FLASH_MS, () => this.setTint(0xffffff));
-        break;
-      case "hurt":
-        this.setTint(0xff5555);
-        this.scene.time.delayedCall(150, () => this.setTint(0xffffff));
-        break;
-      case "jump":
-        this.scene.tweens.add({ targets: this, scaleY: 1.1, duration: 150, yoyo: true });
-        break;
-      case "dead":
-        this.scene.tweens.add({ targets: this, alpha: 0.35, angle: 90, duration: 300 });
-        break;
-      default:
-        break;
-    }
+    const suffix = ANIM_STATE_SUFFIX[state] ?? "idle";
+    const key = `${this.animPrefix}-${suffix}`;
+    this.play(this.scene.anims.exists(key) ? key : `${this.animPrefix}-idle`);
   }
 
   // Smoothly closes the gap to the last known server position each frame.
   interpolate(smoothing = 0.35) {
     this.x = Phaser.Math.Linear(this.x, this.targetX, smoothing);
     this.y = Phaser.Math.Linear(this.y, this.targetY, smoothing);
+  }
+
+  // Kills any residual interpolation creep immediately -- used when the
+  // death sequence starts, since interpolate() runs at real (unscaled) time
+  // and isn't affected by anims/tweens/physics timeScale.
+  snapToTarget() {
+    this.x = this.targetX;
+    this.y = this.targetY;
   }
 }
