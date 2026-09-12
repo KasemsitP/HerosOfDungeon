@@ -1,4 +1,5 @@
 import { createServer } from "http";
+import path from "path";
 import express from "express";
 import cors from "cors";
 import { Server, matchMaker } from "colyseus";
@@ -43,6 +44,13 @@ app.get("/api/rooms/:code", (req, res) => {
   }
   res.json({ roomId });
 });
+
+// Serve the built React/Phaser client from the same service, so client and
+// server share one Railway deployment and one origin (no CORS needed in
+// production). The client has no client-side router -- it's a single page
+// that switches views via React state -- so express.static's default
+// "serve index.html for /" behavior is enough; no SPA catch-all route needed.
+app.use(express.static(path.join(__dirname, "../../client/dist")));
 
 httpServer.listen(PORT, () => {
   console.log(`Heroes and Dungeons server listening on ws://localhost:${PORT}`);

@@ -2,7 +2,14 @@ import { Client, Room } from "colyseus.js";
 import { CreateRoomResponse, JoinOptions, PRACTICE_ROOM_NAME, ResolveRoomCodeResponse, ROOM_NAME } from "@hnd/shared";
 import { BattleStateView } from "./types";
 
-const ENDPOINT = import.meta.env.VITE_SERVER_URL ?? "ws://localhost:2567";
+// VITE_SERVER_URL is baked in at build time (see client/.env.development for
+// local dev, which points at the separate dev server on :2567). Production
+// builds don't set it, since client and server are deployed as one Railway
+// service on one domain -- same-origin is the correct endpoint there, and
+// hardcoding localhost would make the deployed client try to dial the
+// player's own machine instead of the real server.
+const ENDPOINT =
+  import.meta.env.VITE_SERVER_URL ?? `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`;
 const HTTP_BASE = ENDPOINT.replace(/^ws/, "http");
 
 let client: Client | null = null;
