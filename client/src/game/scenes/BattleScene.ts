@@ -29,6 +29,14 @@ const DEATH_ZOOM_OUT_MS = 500;
 
 const HIT_STOP_MS = 80;
 const HIT_STOP_SCALE = 0.05;
+// Hits can land faster than HIT_STOP_MS apart (attack1's cooldown alone is
+// 400ms, and both players' hits broadcast to both clients), so without a
+// floor between triggers each new hit re-arms globalTimeScale before the
+// previous one resets -- during a real exchange it stays pinned near 0
+// almost continuously, which reads as the walk/run animation (and by
+// extension, movement) being stuck. This guarantees real recovery time
+// between freezes even in a fast flurry.
+const HIT_STOP_MIN_GAP_MS = 150;
 const HIT_SHAKE_MS = 80;
 const HIT_SHAKE_INTENSITY = 0.005;
 const SPRITE_FLASH_MS = 100;
@@ -47,6 +55,7 @@ export class BattleScene extends Phaser.Scene {
   private wasDefending = false;
   private inputLocked = false;
   private deathSequenceStarted = false;
+  private lastHitStopAt = 0;
 
   constructor() {
     super("BattleScene");
@@ -175,8 +184,7 @@ export class BattleScene extends Phaser.Scene {
     this.spawnDamageNumber(data.x, data.y, data.damage, data.wasBlocked, data.attackType);
     this.flashSpriteTint(data.targetId);
 
-    if (!data.targetDied) {
-      this.applyHitStop();
+    if (!data.targetDied && this.applyHitStop()) {
       this.cameras.main.shake(HIT_SHAKE_MS, HIT_SHAKE_INTENSITY);
     }
   }
@@ -211,13 +219,26 @@ export class BattleScene extends Phaser.Scene {
   // timeScale. Guarded by deathSequenceStarted on both ends so a hit that
   // happens to land right as the death sequence kicks in can't have its
   // resolve-after-80ms callback stomp globalTimeScale back to 1 mid-cinematic.
-  private applyHitStop() {
-    if (this.deathSequenceStarted) return;
+  //
+  // Throttled by HIT_STOP_MIN_GAP_MS (see its declaration) -- hits can land
+  // faster than this freeze resolves, and without a floor between triggers
+  // each new hit re-arms globalTimeScale before the last one clears, so it
+  // stays pinned near 0 for as long as combat stays fast, which looks (and
+  // plays) like movement/animation is stuck. Returns whether it actually
+  // fired, so callers (e.g. the camera shake in handleHitEvent) can skip
+  // their own effect too instead of spamming independently of this gate.
+  private applyHitStop(): boolean {
+    if (this.deathSequenceStarted) return false;
+    const now = Date.now();
+    if (now - this.lastHitStopAt < HIT_STOP_MIN_GAP_MS) return false;
+    this.lastHitStopAt = now;
+
     this.anims.globalTimeScale = HIT_STOP_SCALE;
     setTimeout(() => {
       if (this.deathSequenceStarted) return;
       this.anims.globalTimeScale = 1;
     }, HIT_STOP_MS);
+    return true;
   }
 
   private flashSpriteTint(targetId: string) {

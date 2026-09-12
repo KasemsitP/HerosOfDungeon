@@ -97,14 +97,22 @@ export class PracticeRoom extends BattleRoom {
         this.handleAction(BOT_SESSION_ID, "defendStart");
         this.botDefendUntil = now + BOT_DEFEND_DURATION_MS;
       }
-    }
 
-    if (dist <= BOT_ATTACK3_DISTANCE) {
-      this.handleAction(BOT_SESSION_ID, "attack3");
-    } else if (dist <= BOT_ATTACK2_DISTANCE) {
-      this.handleAction(BOT_SESSION_ID, "attack2");
-    } else if (dist <= BOT_ATTACK1_DISTANCE) {
-      this.handleAction(BOT_SESSION_ID, "attack1");
+      // Paced by the same BOT_DECISION_INTERVAL_MS gate as the rest of the
+      // bot's choices above -- this used to run every server tick instead
+      // (SERVER_TICK_MS, ~50ms), so it fired the instant any attack's
+      // cooldown cleared with zero jitter. handleAttack's own per-skill
+      // cooldown still ultimately paces actual hits, but that let the bot
+      // attack far more relentlessly/mechanically than intended, and made
+      // client-side hit-stop (BattleScene.applyHitStop) trigger dense enough
+      // to visibly stick even after being throttled.
+      if (dist <= BOT_ATTACK3_DISTANCE) {
+        this.handleAction(BOT_SESSION_ID, "attack3");
+      } else if (dist <= BOT_ATTACK2_DISTANCE) {
+        this.handleAction(BOT_SESSION_ID, "attack2");
+      } else if (dist <= BOT_ATTACK1_DISTANCE) {
+        this.handleAction(BOT_SESSION_ID, "attack1");
+      }
     }
   }
 }

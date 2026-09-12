@@ -415,8 +415,15 @@ export class BattleRoom extends Room<BattleState> {
         player.vx = knockback;
         player.facingLeft = this.knockbackFacing.get(sessionId) ?? player.facingLeft;
 
+        // Clamp at zero instead of letting the subtraction cross past it --
+        // KNOCKBACK_FRICTION*dt (120 px/s per tick) is larger than
+        // KNOCKBACK_STOP_THRESHOLD (20), so an unclamped step overshoots the
+        // zero-crossing and flips sign every tick (e.g. 20 -> -100 -> 20 ->
+        // -100 ...), which never satisfies `abs(next) < threshold` and pins
+        // player.vx to that oscillating knockback value forever -- the
+        // player's own moveDir input never gets a chance to drive vx again.
         const decay = KNOCKBACK_FRICTION * dt;
-        const next = knockback > 0 ? knockback - decay : knockback + decay;
+        const next = knockback > 0 ? Math.max(0, knockback - decay) : Math.min(0, knockback + decay);
         if (Math.abs(next) < KNOCKBACK_STOP_THRESHOLD) {
           this.knockbackVelocity.delete(sessionId);
           this.knockbackFacing.delete(sessionId);
